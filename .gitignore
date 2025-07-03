@@ -1,0 +1,83 @@
+# Compiled binaries
+bin/
+obj/
+out/
+
+# Rider project files
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Visual Studio specific folders
+.vs/
+.vscode/
+
+# Build results
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+# Uncomment if you have projects using PackageReference
+# !**/packages/*/ 
+# !**/packages.config
+
+# Microsoft Azure Web App publish settings
+PublishProfiles/
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# JetBrains Rider
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Secrets and sensitive config
+appsettings.Development.json
+secrets.json
+
+# Test results
+TestResults/
+*.coverage
+*.coveragejson
+*.codecoverage
+
+# DotCover
+*.dcvr
+
+# Others
+*.dbmdl
+*.bak
+*.db
+
+# Docker
+**/*.container.*
+docker-compose.override.yml
+
+# macOS / Linux
+.DS_Store
+*.swp
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
