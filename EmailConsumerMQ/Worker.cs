@@ -46,7 +46,6 @@ namespace EmailConsumerMQ
                                   autoDelete: false,
                                   arguments: null);
 
-            // Para garantir que só um consumidor processe uma mensagem por vez
             _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
         }
 
