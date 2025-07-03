@@ -1,7 +1,4 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace EmailAPI.Model.MongoDB
+﻿namespace EmailAPI.Model.MongoDB
 {
     public class EmailModelMongoDB
     {
