@@ -29,9 +29,10 @@ namespace EmailConsumerMQ
             _logger = logger;
             _serviceProvider = serviceProvider;
 
-            var factory = new ConnectionFactory()
+            var factory = new ConnectionFactory
             {
                 HostName = config["RabbitMQ:Host"],
+                Port = int.Parse(config["RabbitMQ:Port"] ?? "5672"),
                 UserName = config["RabbitMQ:User"],
                 Password = config["RabbitMQ:Password"],
                 DispatchConsumersAsync = true
