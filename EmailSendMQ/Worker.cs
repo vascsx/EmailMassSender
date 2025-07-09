@@ -12,24 +12,35 @@ namespace EmailSendMQ
     public class Worker : BackgroundService, IDisposable
     {
         private readonly ILogger<Worker> _logger;
-        private readonly IMongoCollection<EmailModelMongoDB> _collection;
-        private readonly IModel _channel;
-        private readonly IConnection _connection;
+        private readonly IConfiguration _config;
+        private IMongoCollection<EmailModelMongoDB> _collection = default!;
+        private IModel _channel = default!;
+        private IConnection _connection = default!;
 
         public Worker(ILogger<Worker> logger, IConfiguration config)
         {
             _logger = logger;
+            _config = config;
 
-            var mongoClient = new MongoClient(config["MongoConnection"]);
-            var mongoDb = mongoClient.GetDatabase("EmailDB");
-            _collection = mongoDb.GetCollection<EmailModelMongoDB>("EmailQueue");
+            ConfigureMongo();
+            ConfigureRabbitMQ();
+        }
 
+        private void ConfigureMongo()
+        {
+            var mongoClient = new MongoClient(_config["MongoConnection"]);
+            var mongoDatabase = mongoClient.GetDatabase("EmailDB");
+            _collection = mongoDatabase.GetCollection<EmailModelMongoDB>("EmailQueue");
+        }
+
+        private void ConfigureRabbitMQ()
+        {
             var factory = new ConnectionFactory
             {
-                HostName = config["RabbitMQ:Host"],
-                Port = int.Parse(config["RabbitMQ:Port"] ?? "5672"),
-                UserName = config["RabbitMQ:User"],
-                Password = config["RabbitMQ:Password"],
+                HostName = _config["RabbitMQ:Host"],
+                Port = int.TryParse(_config["RabbitMQ:Port"], out int port) ? port : 5672,
+                UserName = _config["RabbitMQ:User"],
+                Password = _config["RabbitMQ:Password"],
                 DispatchConsumersAsync = true
             };
 
@@ -46,32 +57,21 @@ namespace EmailSendMQ
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Worker started...");
+            _logger.LogInformation("Email Worker iniciado...");
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
                     var email = await _collection.Find(_ => true)
-                        .FirstOrDefaultAsync(stoppingToken);
+                                                 .FirstOrDefaultAsync(stoppingToken);
 
                     if (email != null)
                     {
-                        var json = JsonSerializer.Serialize(email);
-                        var body = Encoding.UTF8.GetBytes(json);
+                        SendToQueue(email);
+                        await RemoveFromMongo(email, stoppingToken);
 
-                        _channel.BasicPublish(
-                            exchange: "",
-                            routingKey: "email_queue",
-                            basicProperties: null,
-                            body: body);
-
-                        await _collection.DeleteOneAsync(
-                            e => e.Id == email.Id,
-                            stoppingToken);
-
-                        _logger.LogInformation(
-                            $"[✓] Email from {email.Email} sent to queue.");
+                        _logger.LogInformation($"[✓] Email de {email.Email} enviado para fila.");
                     }
                     else
                     {
@@ -80,10 +80,27 @@ namespace EmailSendMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Processing error.");
+                    _logger.LogError(ex, "Erro durante o processamento.");
                     await Task.Delay(2000, stoppingToken);
                 }
             }
+        }
+
+        private void SendToQueue(EmailModelMongoDB email)
+        {
+            var json = JsonSerializer.Serialize(email);
+            var body = Encoding.UTF8.GetBytes(json);
+
+            _channel.BasicPublish(
+                exchange: "",
+                routingKey: "email_queue",
+                basicProperties: null,
+                body: body);
+        }
+
+        private async Task RemoveFromMongo(EmailModelMongoDB email, CancellationToken token)
+        {
+            await _collection.DeleteOneAsync(e => e.Id == email.Id, token);
         }
 
         public void Dispose()

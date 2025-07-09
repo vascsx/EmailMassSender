@@ -2,6 +2,7 @@
 using EmailAPI.Model.MongoDB;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using System.Text.RegularExpressions;
 
 namespace EmailAPI.Controllers
 {
@@ -21,6 +22,8 @@ namespace EmailAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(EmailRequest request)
         {
+            bool emailValid = IsValidEmail(request.Email);
+            if (!emailValid) throw new Exception("O e-mail fornecido não é válido.");
             var model = new EmailModelMongoDB
             {
                 Name = request.Name,
@@ -30,7 +33,13 @@ namespace EmailAPI.Controllers
             };
 
             await _collection.InsertOneAsync(model);
-            return Accepted();
+            return Accepted(new { message = "Mensagem enviada para processamento." });
+        }
+
+        bool IsValidEmail(string email)
+        {
+            var regex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            return regex.IsMatch(email);
         }
     }
 
